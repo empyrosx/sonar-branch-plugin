@@ -1,0 +1,5 @@
+/.gradle/
+/.idea/
+/sonar-distributive/
+/build/
+/sonar-branch-plugin.iml

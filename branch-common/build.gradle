@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+}
+
+group 'com.github.empyrosx.sonarqube.server'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+// properties
+def sonarVersion = '7.8'
+def sonarDistributive = "${projectDir}/../sonar-distributive"
+def sonarLibs = "${sonarDistributive}/sonarqube-${sonarVersion}/lib"
+
+dependencies {
+    compileOnly fileTree(dir: sonarLibs, include: '**/*.jar')
+    testCompile fileTree(dir: sonarLibs, include: '**/*.jar')
+    compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}

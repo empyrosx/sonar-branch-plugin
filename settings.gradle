@@ -1,0 +1,5 @@
+rootProject.name = 'sonar-branch-plugin'
+
+include 'branch-scanner'
+include 'branch-common'
+
