@@ -1,4 +1,4 @@
-package sonarqube.server;
+package com.github.empyrosx.sonarqube.server;
 
 import org.apache.commons.lang.StringUtils;
 import org.sonar.core.util.UuidFactory;

@@ -1,5 +1,6 @@
 package com.github.empyrosx.sonarqube.scanner;
 
+import org.sonar.api.utils.MessageException;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.scanner.bootstrap.ScannerWsClient;
@@ -9,6 +10,7 @@ import org.sonar.scanner.scan.branch.ProjectPullRequestsLoader;
 import org.sonar.scanner.scan.branch.PullRequestInfo;
 import org.sonar.scanner.util.ScannerUtils;
 import org.sonarqube.ws.client.GetRequest;
+import org.sonarqube.ws.client.HttpException;
 import org.sonarqube.ws.client.WsResponse;
 
 import javax.annotation.Nullable;
@@ -34,15 +36,19 @@ public class ProjectPullRequestsLoaderImpl implements ProjectPullRequestsLoader 
     }
 
     private List<PullRequestInfo> loadPullRequests(String projectKey) {
-        List<PullRequestInfo> pullRequestInfoList = Collections.emptyList();
         GetRequest request = new GetRequest(getUrl(projectKey));
 
         try (WsResponse response = this.wsClient.call(request)) {
             return parseResponse(response);
         } catch (IOException e) {
-            LOG.debug("Could not parse project pull requests - continuing without it");
+            throw MessageException.of("Could not load pull requests from server", e);
+        } catch (HttpException e) {
+            if (404 == e.code()) {
+                return Collections.emptyList();
+            } else {
+                throw MessageException.of("Could not load pull requests from server", e);
+            }
         }
-        return pullRequestInfoList;
     }
 
     private static String getUrl(String projectKey) {

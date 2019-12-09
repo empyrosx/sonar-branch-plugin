@@ -39,5 +39,4 @@ public class BranchParamsValidatorImpl implements BranchParamsValidator {
             validationMessages.add(String.format("'%s' is not a valid branch name. Max length is %d characters.", branchName, 255));
         }
     }
-
 }

@@ -1,5 +1,6 @@
 package com.github.empyrosx.sonarqube.scanner;
 
+import org.sonar.api.utils.MessageException;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.scanner.bootstrap.ScannerWsClient;
@@ -10,6 +11,7 @@ import org.sonar.scanner.scan.branch.ProjectBranches;
 import org.sonar.scanner.scan.branch.ProjectBranchesLoader;
 import org.sonar.scanner.util.ScannerUtils;
 import org.sonarqube.ws.client.GetRequest;
+import org.sonarqube.ws.client.HttpException;
 import org.sonarqube.ws.client.WsResponse;
 
 import javax.annotation.Nullable;
@@ -21,7 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ProjectBranchesLoaderImpl implements ProjectBranchesLoader {
-    private static final Logger LOG = Loggers.get(com.sonarsource.branch.ProjectBranchesLoaderImpl.class);
+    private static final Logger LOG = Loggers.get(ProjectBranchesLoaderImpl.class);
     private static final String PROJECT_BRANCHES_URL = "/api/project_branches/list";
     private final ScannerWsClient wsClient;
 
@@ -34,15 +36,19 @@ public class ProjectBranchesLoaderImpl implements ProjectBranchesLoader {
     }
 
     private List<BranchInfo> loadBranchInfos(String projectKey) {
-        List<BranchInfo> branchInfos = Collections.emptyList();
         GetRequest request = new GetRequest(getUrl(projectKey));
 
         try (WsResponse response = this.wsClient.call(request)) {
             return parseResponse(response);
         } catch (IOException e) {
-            LOG.debug("Could not parse project branches - continuing without it");
+            throw MessageException.of("Could not load branches from server", e);
+        } catch (HttpException e) {
+            if (404 == e.code()) {
+                return Collections.emptyList();
+            } else {
+                throw MessageException.of("Could not load branches from server", e);
+            }
         }
-        return branchInfos;
     }
 
     private static String getUrl(String projectKey) {
