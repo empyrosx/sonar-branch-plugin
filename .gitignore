@@ -3,3 +3,5 @@
 /sonar-distributive/
 /build/
 /sonar-branch-plugin.iml
+/branch-common/build/
+/branch-scanner/build/
