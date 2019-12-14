@@ -16,7 +16,8 @@ public class BranchCoreExtension implements CoreExtension {
     @Override
     public void load(Context context) {
         if (SonarQubeSide.COMPUTE_ENGINE == context.getRuntime().getSonarQubeSide()) {
-            context.addExtensions(BranchReportAnalysisComponentProvider.class, BranchEditionProvider.class);
+            context.addExtensions(BranchReportAnalysisComponentProvider.class, BranchEditionProvider.class,
+                    GitlabPullRequestDecorator.class);
         }
     }
 }
