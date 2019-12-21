@@ -26,7 +26,8 @@ public class BranchConfigurationLoaderImpl implements BranchConfigurationLoader 
     public BranchConfigurationLoaderImpl() {
     }
 
-    @Override
+    // @Override
+    // From version 7.8
     public BranchConfiguration load(Map<String, String> localSettings, Supplier<Map<String, String>> settingsSupplier, ProjectBranches branches, ProjectPullRequests pullRequests) {
         boolean isPullRequestAnalysis = hasAnyPrProperty(localSettings);
         boolean isBranchAnalysis = hasAnyBranchProperty(localSettings);
@@ -45,6 +46,11 @@ public class BranchConfigurationLoaderImpl implements BranchConfigurationLoader 
         return createPullRequestConfiguration(localSettings, branches, pullRequests);
     }
 
+    @Override
+    public BranchConfiguration load(Map<String, String> localSettings, ProjectBranches branches, ProjectPullRequests pullRequests) {
+        return load(localSettings, null, branches, pullRequests);
+    }
+
     private static boolean hasAnyBranchProperty(Map<String, String> settings) {
         return BRANCH_PARAMETERS.stream().anyMatch(settings::containsKey);
     }
@@ -54,7 +60,7 @@ public class BranchConfigurationLoaderImpl implements BranchConfigurationLoader 
                 .anyMatch((param) -> StringUtils.trimToNull(mutableSettings.get(param)) != null);
     }
 
-    private static BranchConfiguration createBranchConfiguration(Map<String, String> localSettings, Supplier<Map<String, String>> settingsSupplier, ProjectBranches branches) {
+    private static BranchConfiguration createBranchConfiguration(Map<String, String> localSettings, @Nullable Supplier<Map<String, String>> settingsSupplier, ProjectBranches branches) {
         if (StringUtils.trimToNull(localSettings.get(SONAR_BRANCH_NAME)) == null) {
             throw MessageException.of(String.format("Parameter '%s' is mandatory for a branch analysis", "sonar.branch.name"));
         }
@@ -188,9 +194,12 @@ public class BranchConfigurationLoaderImpl implements BranchConfigurationLoader 
         return pullRequests.get(pullRequestBase);
     }
 
-    private static BranchType computeBranchType(Supplier<Map<String, String>> settingsSupplier, String branchName) {
-        Map<String, String> settings = settingsSupplier.get();
-        String longLivedBranchesRegex = settings.get("sonar.branch.longLivedBranches.regex");
+    private static BranchType computeBranchType(@Nullable Supplier<Map<String, String>> settingsSupplier, String branchName) {
+        String longLivedBranchesRegex = null;
+        if (settingsSupplier != null) {
+            Map<String, String> settings = settingsSupplier.get();
+            longLivedBranchesRegex = settings.get("sonar.branch.longLivedBranches.regex");
+        }
         if (longLivedBranchesRegex == null) {
             longLivedBranchesRegex = LONG_LIVED_BRANCHES_REGEX;
         }

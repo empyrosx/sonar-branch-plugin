@@ -9,7 +9,6 @@ import org.sonar.scanner.scan.branch.BranchInfo;
 import org.sonar.scanner.scan.branch.BranchType;
 import org.sonar.scanner.scan.branch.ProjectBranches;
 import org.sonar.scanner.scan.branch.ProjectBranchesLoader;
-import org.sonar.scanner.util.ScannerUtils;
 import org.sonarqube.ws.client.GetRequest;
 import org.sonarqube.ws.client.HttpException;
 import org.sonarqube.ws.client.WsResponse;
@@ -52,7 +51,7 @@ public class ProjectBranchesLoaderImpl implements ProjectBranchesLoader {
     }
 
     private static String getUrl(String projectKey) {
-        return PROJECT_BRANCHES_URL + "?project=" + ScannerUtils.encodeForUrl(projectKey);
+        return PROJECT_BRANCHES_URL + "?project=" + Utils.encodeForUrl(projectKey);
     }
 
     private static List<BranchInfo> parseResponse(WsResponse response) throws IOException {

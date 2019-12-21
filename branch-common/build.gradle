@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id('com.github.johnrengelman.shadow') version('5.1.0')
 }
 
 group 'com.github.empyrosx.sonarqube.server'
@@ -11,11 +12,6 @@ repositories {
     mavenCentral()
 }
 
-// properties
-def sonarVersion = '7.8'
-def sonarDistributive = "${projectDir}/../sonar-distributive"
-def sonarLibs = "${sonarDistributive}/sonarqube-${sonarVersion}/lib"
-
 dependencies {
     compileOnly fileTree(dir: sonarLibs, include: '**/*.jar')
     testCompile fileTree(dir: sonarLibs, include: '**/*.jar')
@@ -24,7 +20,10 @@ dependencies {
     compile group: 'org.gitlab', name: 'java-gitlab-api', version: '4.1.1'
 }
 
-jar {
-    archiveBaseName = 'branch-common'
+tasks.shadowJar {
+    archivesBaseName = 'branch-common'
     archiveVersion = ''
+    archiveClassifier = ''
 }
+
+assemble.dependsOn('shadowJar')

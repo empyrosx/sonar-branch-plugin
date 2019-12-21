@@ -8,7 +8,6 @@ import org.sonar.scanner.protocol.GsonHelper;
 import org.sonar.scanner.scan.branch.ProjectPullRequests;
 import org.sonar.scanner.scan.branch.ProjectPullRequestsLoader;
 import org.sonar.scanner.scan.branch.PullRequestInfo;
-import org.sonar.scanner.util.ScannerUtils;
 import org.sonarqube.ws.client.GetRequest;
 import org.sonarqube.ws.client.HttpException;
 import org.sonarqube.ws.client.WsResponse;
@@ -52,7 +51,7 @@ public class ProjectPullRequestsLoaderImpl implements ProjectPullRequestsLoader 
     }
 
     private static String getUrl(String projectKey) {
-        return PROJECT_PULL_REQUESTS_URL + "?project=" + ScannerUtils.encodeForUrl(projectKey);
+        return PROJECT_PULL_REQUESTS_URL + "?project=" + Utils.encodeForUrl(projectKey);
     }
 
     private static List<PullRequestInfo> parseResponse(WsResponse response) throws IOException {

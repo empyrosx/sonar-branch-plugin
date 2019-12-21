@@ -16,22 +16,22 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-
 plugins {
     id('java')
     id('org.sonarqube') version('2.7')
 }
 
-group 'com.github.empyrosx.sonarqube'
-version '1.0-SNAPSHOT'
+ext {
+    sonarVersion = '7.9.2'
+    sonarDistributive = "${projectDir}/sonar-distributive"
+    sonarLibs = "${sonarDistributive}/sonarqube-${sonarVersion}/lib"
+}
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-// properties
-def sonarVersion = '7.8'
-def sonarDistributive = "${projectDir}/sonar-distributive"
-def sonarLibs = "${sonarDistributive}/sonarqube-${sonarVersion}/lib"
+group 'com.github.empyrosx.sonarqube'
+version '1.0-SNAPSHOT'
 
 configurations {
     zip
@@ -78,7 +78,8 @@ project.afterEvaluate {
 sourceSets {
     integTest {
         compileClasspath += sourceSets.main.output
-        runtimeClasspath += sourceSets.main.output    }
+        runtimeClasspath += sourceSets.main.output
+    }
 }
 
 task integrationTest(type: Test) {

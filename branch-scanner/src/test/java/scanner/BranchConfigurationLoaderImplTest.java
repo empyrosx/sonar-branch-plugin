@@ -11,16 +11,13 @@ import org.sonar.api.utils.MessageException;
 import org.sonar.scanner.scan.branch.*;
 
 import java.util.*;
-import java.util.function.Supplier;
 
 import static com.github.empyrosx.sonarqube.scanner.ScannerSettings.*;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class BranchConfigurationLoaderImplTest {
 
     private static final Map<String, String> empty = new HashMap<>();
-    private static final Supplier<Map<String, String>> emptySupplier = () -> empty;
     private static final ProjectBranches emptyBranches = new ProjectBranches(new ArrayList<>());
     private static final ProjectPullRequests emptyPRs = new ProjectPullRequests(new ArrayList<>());
     private final ExpectedException expectedException = ExpectedException.none();
@@ -66,14 +63,14 @@ public class BranchConfigurationLoaderImplTest {
 
         setExceptionMsg("Project was never analyzed. A regular analysis is required before a branch/pull request analysis");
 
-        loader.load(settings, emptySupplier, emptyBranches, emptyPRs);
+        loader.load(settings, emptyBranches, emptyPRs);
     }
 
     @Test
     public void testDefaultConfiguration() {
         Map<String, String> settings = new HashMap<>();
 
-        BranchConfiguration actual = loader.load(settings, emptySupplier, emptyBranches, emptyPRs);
+        BranchConfiguration actual = loader.load(settings, emptyBranches, emptyPRs);
         Assert.assertEquals(DefaultBranchConfiguration.class, actual.getClass());
     }
 
@@ -83,7 +80,7 @@ public class BranchConfigurationLoaderImplTest {
         String branchName = "master";
         settings.put(SONAR_BRANCH_NAME, branchName);
 
-        BranchConfiguration actual = loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        BranchConfiguration actual = loader.load(settings, projectBranches, emptyPRs);
         Assert.assertEquals(branchName, actual.branchName());
         Assert.assertEquals(branchName, actual.longLivingSonarReferenceBranch());
         assertNull(actual.targetBranchName());
@@ -98,7 +95,7 @@ public class BranchConfigurationLoaderImplTest {
 
         setExceptionMsg("The main branch must not have a target");
 
-        loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        loader.load(settings, projectBranches, emptyPRs);
     }
 
     @Test
@@ -107,7 +104,7 @@ public class BranchConfigurationLoaderImplTest {
         String branchName = "release-1.0";
         settings.put(SONAR_BRANCH_NAME, branchName);
 
-        BranchConfiguration actual = loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        BranchConfiguration actual = loader.load(settings, projectBranches, emptyPRs);
         Assert.assertEquals(branchName, actual.branchName());
         Assert.assertEquals(branchName, actual.longLivingSonarReferenceBranch());
         Assert.assertEquals("master", actual.targetBranchName());
@@ -121,7 +118,7 @@ public class BranchConfigurationLoaderImplTest {
 
         setExceptionMsg("Parameter 'sonar.branch.name' is mandatory for a branch analysis");
 
-        BranchConfiguration actual = loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        BranchConfiguration actual = loader.load(settings, projectBranches, emptyPRs);
         Assert.assertEquals(branchName, actual.branchName());
         Assert.assertEquals("master", actual.longLivingSonarReferenceBranch());
         Assert.assertEquals("master", actual.targetBranchName());
@@ -133,7 +130,7 @@ public class BranchConfigurationLoaderImplTest {
         String branchName = "release-1.0/feature/feature_1.1";
         settings.put(SONAR_BRANCH_NAME, branchName);
 
-        BranchConfiguration actual = loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        BranchConfiguration actual = loader.load(settings, projectBranches, emptyPRs);
         Assert.assertEquals(branchName, actual.branchName());
         Assert.assertEquals("master", actual.longLivingSonarReferenceBranch());
         Assert.assertEquals("master", actual.targetBranchName());
@@ -146,7 +143,7 @@ public class BranchConfigurationLoaderImplTest {
         settings.put(SONAR_BRANCH_NAME, branchName);
         settings.put(SONAR_BRANCH_TARGET, "release-2.0");
 
-        BranchConfiguration actual = loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        BranchConfiguration actual = loader.load(settings, projectBranches, emptyPRs);
         Assert.assertEquals(branchName, actual.branchName());
         Assert.assertEquals("master", actual.longLivingSonarReferenceBranch());
         Assert.assertEquals("release-2.0", actual.targetBranchName());
@@ -160,7 +157,7 @@ public class BranchConfigurationLoaderImplTest {
         settings.put(SONAR_BRANCH_NAME, branchName);
         settings.put(SONAR_BRANCH_TARGET, branchTarget);
 
-        BranchConfiguration actual = loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        BranchConfiguration actual = loader.load(settings, projectBranches, emptyPRs);
         Assert.assertEquals(branchName, actual.branchName());
         Assert.assertEquals(branchTarget, actual.longLivingSonarReferenceBranch());
         Assert.assertEquals(branchTarget, actual.targetBranchName());
@@ -174,7 +171,7 @@ public class BranchConfigurationLoaderImplTest {
         settings.put(SONAR_BRANCH_NAME, branchName);
         settings.put(SONAR_BRANCH_TARGET, branchTarget);
 
-        BranchConfiguration actual = loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        BranchConfiguration actual = loader.load(settings, projectBranches, emptyPRs);
         Assert.assertEquals(branchName, actual.branchName());
         Assert.assertEquals("master", actual.longLivingSonarReferenceBranch());
         Assert.assertEquals(branchTarget, actual.targetBranchName());
@@ -188,7 +185,7 @@ public class BranchConfigurationLoaderImplTest {
         settings.put(SONAR_BRANCH_NAME, branchName);
         settings.put(SONAR_BRANCH_TARGET, branchTarget);
 
-        BranchConfiguration actual = loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        BranchConfiguration actual = loader.load(settings, projectBranches, emptyPRs);
         Assert.assertEquals(branchName, actual.branchName());
         Assert.assertEquals("release-1.0", actual.longLivingSonarReferenceBranch());
         Assert.assertEquals(branchTarget, actual.targetBranchName());
@@ -204,7 +201,7 @@ public class BranchConfigurationLoaderImplTest {
 
         setExceptionMsg(String.format("Illegal state: the target branch '%s' was expected to have a target", branchTarget));
 
-        loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        loader.load(settings, projectBranches, emptyPRs);
     }
 
     @Test
@@ -218,7 +215,7 @@ public class BranchConfigurationLoaderImplTest {
         setExceptionMsg(String.format("Illegal state: the target of the target branch '%s' was expected to be a long living branch"
                 , "release-1.0/feature/feature_1.2"));
 
-        loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        loader.load(settings, projectBranches, emptyPRs);
     }
 
     @Test
@@ -230,7 +227,7 @@ public class BranchConfigurationLoaderImplTest {
 
         setExceptionMsg(String.format("A branch analysis cannot have the pull request analysis parameter '%s'", SONAR_PR_KEY));
 
-        loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        loader.load(settings, projectBranches, emptyPRs);
     }
 
     @Test
@@ -243,7 +240,7 @@ public class BranchConfigurationLoaderImplTest {
         String baseBranch = "release-1.0";
         settings.put(SONAR_PR_BASE, baseBranch);
 
-        BranchConfiguration actual = loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        BranchConfiguration actual = loader.load(settings, projectBranches, emptyPRs);
         Assert.assertEquals(prKey, actual.pullRequestKey());
         Assert.assertEquals(branchName, actual.branchName());
         Assert.assertEquals(baseBranch, actual.targetBranchName());
@@ -258,7 +255,7 @@ public class BranchConfigurationLoaderImplTest {
 
         setExceptionMsg(String.format("Parameter '%s' is mandatory for a pull request analysis", SONAR_PR_KEY));
 
-        loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        loader.load(settings, projectBranches, emptyPRs);
     }
 
     @Test
@@ -269,7 +266,7 @@ public class BranchConfigurationLoaderImplTest {
 
         setExceptionMsg(String.format("Parameter '%s' is mandatory for a pull request analysis", SONAR_PR_BRANCH));
 
-        loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        loader.load(settings, projectBranches, emptyPRs);
     }
 
     @Test
@@ -280,7 +277,7 @@ public class BranchConfigurationLoaderImplTest {
         String branchName = "release-1.0/pr-1";
         settings.put(SONAR_PR_BRANCH, branchName);
 
-        BranchConfiguration actual = loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        BranchConfiguration actual = loader.load(settings, projectBranches, emptyPRs);
         Assert.assertEquals(prKey, actual.pullRequestKey());
         Assert.assertEquals(branchName, actual.branchName());
         Assert.assertEquals("master", actual.targetBranchName());
@@ -296,7 +293,7 @@ public class BranchConfigurationLoaderImplTest {
         settings.put(SONAR_PR_BRANCH, branchName);
         settings.put(SONAR_PR_BASE, "something_that_does_not_exist");
 
-        BranchConfiguration actual = loader.load(settings, emptySupplier, projectBranches, emptyPRs);
+        BranchConfiguration actual = loader.load(settings, projectBranches, emptyPRs);
         Assert.assertEquals(prKey, actual.pullRequestKey());
         Assert.assertEquals(branchName, actual.branchName());
         Assert.assertEquals("something_that_does_not_exist", actual.targetBranchName());
@@ -314,7 +311,7 @@ public class BranchConfigurationLoaderImplTest {
         settings.put(SONAR_PR_BRANCH, branchName);
         settings.put(SONAR_PR_BASE, baseBranch);
 
-        BranchConfiguration actual = loader.load(settings, emptySupplier, projectBranches, projectPRs);
+        BranchConfiguration actual = loader.load(settings, projectBranches, projectPRs);
         Assert.assertEquals(prKey, actual.pullRequestKey());
         Assert.assertEquals(branchName, actual.branchName());
         Assert.assertEquals(baseBranch, actual.targetBranchName());
@@ -334,7 +331,7 @@ public class BranchConfigurationLoaderImplTest {
 
         setExceptionMsg("Illegal state: the pull request '3' was expected to have a base branch");
 
-        loader.load(settings, emptySupplier, projectBranches, projectPRs);
+        loader.load(settings, projectBranches, projectPRs);
     }
 
     @Test
@@ -350,7 +347,7 @@ public class BranchConfigurationLoaderImplTest {
 
         setExceptionMsg("Illegal state: the base 'release-1.0/feature/feature_1.3' of the branch 'release-1.0/pr-4' was expected to be a long living branch");
 
-        loader.load(settings, emptySupplier, projectBranches, projectPRs);
+        loader.load(settings, projectBranches, projectPRs);
     }
 
 }

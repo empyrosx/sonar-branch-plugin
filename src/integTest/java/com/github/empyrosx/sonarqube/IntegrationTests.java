@@ -6,6 +6,9 @@ import okhttp3.Response;
 import org.hamcrest.CoreMatchers;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.scanner.protocol.GsonHelper;
@@ -17,10 +20,6 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.MountableFile;
 
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -29,7 +28,11 @@ import java.util.function.Consumer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
+@RunWith(Parameterized.class)
+//@Ignore
 public class IntegrationTests {
+
+    private String sonarImage;
 
     @Rule
     public Network network = Network.newNetwork();
@@ -44,17 +47,25 @@ public class IntegrationTests {
             tasks.add(line);
         }
     };
+    private GenericContainer sonarQube;
+
+    public IntegrationTests(String sonarImage) {
+        this.sonarImage = sonarImage;
+    }
 
     @Rule
-    public GenericContainer sonarQube = new GenericContainer("sonarqube:7.8-community")
-            .withCopyFileToContainer(MountableFile.forHostPath("branch-scanner/build/libs/branch-scanner.jar"), "/opt/sonarqube/lib/scanner/")
-            .withCopyFileToContainer(MountableFile.forHostPath("branch-common/build/libs/branch-common.jar"), "/opt/sonarqube/lib/common/")
-            .withExposedPorts(9000)
-            .withLogConsumer(consumer)
-            .withLogConsumer(new Slf4jLogConsumer(logger))
-            .withNetwork(network)
-            .withNetworkAliases("sonarqube")
-            .waitingFor(Wait.forLogMessage(".*SonarQube is up.*", 1));
+    public GenericContainer getSonarQube() {
+        this.sonarQube = new GenericContainer(sonarImage)
+                .withCopyFileToContainer(MountableFile.forHostPath("branch-scanner/build/libs/branch-scanner.jar"), "/opt/sonarqube/lib/scanner/")
+                .withCopyFileToContainer(MountableFile.forHostPath("branch-common/build/libs/branch-common.jar"), "/opt/sonarqube/lib/common/")
+                .withExposedPorts(9000)
+                .withLogConsumer(consumer)
+                .withLogConsumer(new Slf4jLogConsumer(logger))
+                .withNetwork(network)
+                .withNetworkAliases("sonarqube")
+                .waitingFor(Wait.forLogMessage(".*SonarQube is up.*", 1));
+        return this.sonarQube;
+    }
 
     GenericContainer createScanner(String resourcePath) {
         return new GenericContainer("newtmitch/sonar-scanner:alpine")
@@ -64,13 +75,21 @@ public class IntegrationTests {
                 .waitingFor(Wait.forLogMessage(".*EXECUTION SUCCESS.*", 1));
     }
 
+    @Parameters(name = "{0}")
+    public static Object[] data() {
+        return new Object[]{
+                "sonarqube:7.8-community",
+                "sonarqube:7.9-community",
+                "sonarqube:7.9.1-community",
+                "sonarqube:7.9.2-community"
+//                "sonarqube:8-community-beta",
+//                "sonarqube:8.1-community-beta"
+        };
+    }
+
     @Test
     public void testSonarQube() throws Exception {
         String redisUrl = sonarQube.getContainerIpAddress() + ":" + sonarQube.getMappedPort(9000);
-        URL resource = IntegrationTests.class.getClassLoader().getResource("analyze-default/sonar-scanner.properties");
-        Path file = Paths.get(resource.toURI());
-        Files.writeString(file, String.format("sonar.host.url=%s", redisUrl.replace("localhost", "sonarqube")));
-
         GenericContainer scanner = createScanner("analyze-default");
         scanner.start();
 
