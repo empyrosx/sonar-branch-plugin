@@ -1,13 +1,14 @@
 package com.github.empyrosx.sonarqube.ce;
 
 import org.gitlab.api.GitlabAPI;
-import org.gitlab.api.models.GitlabMergeRequest;
-import org.gitlab.api.models.GitlabProject;
+import org.gitlab.api.models.*;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.config.Configuration;
+import org.sonar.api.issue.Issue;
 import org.sonar.api.platform.Server;
+import org.sonar.api.rules.RuleType;
 import org.sonar.api.utils.MessageException;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
@@ -16,14 +17,15 @@ import org.sonar.core.issue.DefaultIssue;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.gitlab.api.http.Method.DELETE;
+import static org.sonar.api.rule.Severity.*;
 
 public class GitlabPullRequestDecorator implements PostProjectAnalysisTask {
 
     private static final Logger LOG = Loggers.get(GitlabPullRequestDecorator.class);
-
 
     private final ConfigurationRepository configurationRepository;
     private final PullRequestIssueVisitor pullRequestIssueVisitor;
@@ -61,54 +63,141 @@ public class GitlabPullRequestDecorator implements PostProjectAnalysisTask {
             final String pullRequestBranch = projectAnalysis.getBranch().get().getName().get();
 
             GitlabAPI api = GitlabAPI.connect(url, token);
+            String username = api.getUser().getUsername();
 
             GitlabProject project = api.getProject(projectId);
             GitlabMergeRequest mergeRequest = findMergeRequest(api, project, pullRequestBranch);
 
             postStatus(api, mergeRequest, projectAnalysis, revision.get());
 
-            List<DefaultIssue> openIssues = pullRequestIssueVisitor.getIssues().stream()
-                    .filter(DefaultIssue::isNew)
-                    .collect(Collectors.toList());
+            List<DefaultIssue> openIssues = new ArrayList<>(pullRequestIssueVisitor.getIssues());
+            List<GitlabDiscussion> discussions = api.getDiscussions(mergeRequest);
+            for (GitlabDiscussion disc : discussions) {
+                for (GitlabNote note : disc.getNotes())
+                    if (note.getAuthor().getUsername().equals(username)) {
+                        String tailUrl = GitlabProject.URL + "/" + mergeRequest.getProjectId() +
+                                GitlabMergeRequest.URL + "/" + mergeRequest.getIid() +
+                                GitlabDiscussion.URL + "/" + disc.getId() +
+                                GitlabNote.URL + "/" + note.getId();
+                        api.retrieve().method(DELETE).to(tailUrl, Void.class);
+//                    This method expects int disc.getId() but really it String
+//                    TODO: fix it in gitlab-api
+//                    api.deleteDiscussionNote(mergeRequest, disc.getId(), note.getId());
+                    }
+            }
 
             for (DefaultIssue issue : openIssues) {
-                postCommitComment(api, mergeRequest, issue);
+                if (!Issue.STATUS_CLOSED.equals(issue.status()) && !Issue.STATUS_RESOLVED.equals(issue.status()))
+                    postCommitComment(api, mergeRequest, issue);
             }
         } catch (IOException ex) {
             throw new IllegalStateException("Could not decorate Pull Request on Gitlab", ex);
         }
-
     }
 
     private GitlabMergeRequest findMergeRequest(GitlabAPI api, GitlabProject project, String pullRequestBranch) throws IOException {
         List<GitlabMergeRequest> mergeRequests = api.getOpenMergeRequests(project);
         for (GitlabMergeRequest mr : mergeRequests) {
-            if (mr.getSourceBranch().equals(pullRequestBranch)) {
-                return mr;
+            if (mr.getIid().equals(Integer.parseInt(pullRequestBranch))) {
+                return api.getMergeRequest(project, mr.getIid());
             }
         }
         throw MessageException.of(String.format("Pull request for branch %s is not found", pullRequestBranch));
     }
 
-    private void postCommitComment(GitlabAPI api, GitlabMergeRequest mergeRequest, DefaultIssue issue) throws IOException {
+    private void postCommitComment(GitlabAPI api, GitlabMergeRequest mergeRequest, DefaultIssue issue) {
         String fileName = pullRequestIssueVisitor.getFileName(issue);
-        api.createTextDiscussion(mergeRequest, issue.getMessage(),
-                null,
-                mergeRequest.getBaseSha(),
-                mergeRequest.getStartSha(),
-                mergeRequest.getSha(),
-                fileName,
-                issue.getLine(),
-                null,
-                null);
+        try {
+            List<GitlabCommit> commits = api.getCommits(mergeRequest);
+            commits.sort(Comparator.comparing(GitlabCommit::getCommittedDate));
+
+            List<String> diffs = new ArrayList<>();
+            for (GitlabCommit commit : commits) {
+                List<GitlabCommitDiff> commitDiffs = api.getCommitDiffs(mergeRequest.getProjectId(), commit.getId());
+                for (GitlabCommitDiff diff : commitDiffs) {
+                    if (diff.getNewPath().equalsIgnoreCase(fileName)) {
+                        diffs.add(diff.getDiff());
+                    }
+                }
+            }
+
+            Integer oldLine = issue.getLine() == null ? null : DiffUtils.getBaseSourceLine(diffs, issue.getLine());
+
+            LOG.info("Calculating base line for file: " + fileName);
+            LOG.info("New line: " + issue.getLine());
+            LOG.info("Old line: " + oldLine);
+
+            String message = getIcon(issue) + " " + issue.getMessage();
+            api.createTextDiscussion(mergeRequest, message,
+                    null,
+                    mergeRequest.getBaseSha(),
+                    mergeRequest.getStartSha(),
+                    mergeRequest.getSha(),
+                    fileName,
+                    issue.getLine(),
+                    fileName,
+                    oldLine);
+        } catch (Exception e) {
+            LOG.error("Can't make comment", e);
+        }
+    }
+
+    @Nonnull
+    private String getIcon(DefaultIssue issue) {
+        String icon;
+        switch (issue.severity()) {
+            case BLOCKER:
+                icon = ":exclamation:";
+                break;
+            case CRITICAL:
+                icon = ":arrow_up:";
+                break;
+            case MAJOR:
+                icon = ":arrow_up_small:";
+                break;
+            case MINOR:
+                icon = ":arrow_down:";
+                break;
+            case INFO:
+                icon = ":information_source:";
+                break;
+            default:
+                icon = "";
+        }
+        return icon;
+    }
+
+    private static String pluralOf(long value, String singleLabel, String multiLabel) {
+        return value + " " + (1 == value ? singleLabel : multiLabel);
     }
 
     protected void postStatus(GitlabAPI api, GitlabMergeRequest mergeRequest, ProjectAnalysis projectAnalysis, String revision) throws IOException {
+
+        List<DefaultIssue> openIssues = pullRequestIssueVisitor.getIssues().stream()
+                .filter(issue -> !Issue.STATUS_CLOSED.equals(issue.status()) && !Issue.STATUS_RESOLVED.equals(issue.status()))
+                .collect(Collectors.toList());
+        Map<RuleType, Long> issueCounts = Arrays.stream(RuleType.values()).collect(Collectors.toMap(k -> k,
+                k -> openIssues
+                        .stream()
+                        .filter(i -> k == i.type())
+                        .count()));
+
+        String state = (QualityGate.Status.OK == projectAnalysis.getQualityGate().getStatus() ? "success" : "failed");
+        String NEW_LINE = "\n\n";
+
+        String summaryComment = String.format("%s %s", state, NEW_LINE) +
+                String.format("# Analysis Details %s", NEW_LINE) +
+                String.format("## %s Issues %s", issueCounts.values().stream().mapToLong(l -> l).sum(), NEW_LINE) +
+                String.format(" - %s %s", pluralOf(issueCounts.get(RuleType.BUG), "Bug", "Bugs"), NEW_LINE) +
+                String.format(" - %s %s", pluralOf(issueCounts.get(RuleType.VULNERABILITY), "Vulnerability", "Vulnerabilities"), NEW_LINE) +
+                String.format(" - %s %s", pluralOf(issueCounts.get(RuleType.SECURITY_HOTSPOT), "Security issue", "Security issues"), NEW_LINE) +
+                String.format(" - %s %s", pluralOf(issueCounts.get(RuleType.CODE_SMELL), "Code Smell", "Code Smells"), NEW_LINE);
+
+
         String targetURL = String.format("%s/dashboard?id=%s&pullRequest=%s", server.getPublicRootUrl()
                 , projectAnalysis.getProject().getKey()
                 , projectAnalysis.getBranch().get().getName().get());
-        String state = (QualityGate.Status.OK == projectAnalysis.getQualityGate().getStatus() ? "Passed" : "Failed");
-        api.createCommitStatus(mergeRequest.getProjectId(), revision, state, mergeRequest.getSourceBranch(), "SonarQube", targetURL, "SonarQube status");
+        api.createCommitStatus(mergeRequest.getProjectId(), mergeRequest.getSha().substring(0, 8), state, mergeRequest.getSourceBranch(), "SonarQube", targetURL, summaryComment);
     }
 
     private static String getProperty(String propertyName, Configuration configuration) {

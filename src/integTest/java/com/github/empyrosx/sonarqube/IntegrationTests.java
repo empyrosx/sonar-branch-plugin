@@ -29,7 +29,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 @RunWith(Parameterized.class)
-//@Ignore
 public class IntegrationTests {
 
     private String sonarImage;
