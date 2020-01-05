@@ -75,6 +75,15 @@ public class BranchCoreExtension implements CoreExtension {
                         .name("Repository project for the Gitlab (Server or Cloud) instance")
                         .description("The repository project can be user/repo or just project ID")
                         .type(PropertyType.STRING)
+                        .build(),
+                PropertyDefinition.builder("sonar.pullrequest.gitlab.checker")
+                        .onQualifiers(Qualifiers.PROJECT)
+                        .subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
+                        .name("Pipeline name")
+                        .description("Name of pipeline")
+                        .type(PropertyType.STRING)
+                        .defaultValue("SonarQube")
                         .build()
         );
     }
