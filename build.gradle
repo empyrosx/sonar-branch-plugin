@@ -22,7 +22,7 @@ plugins {
 }
 
 ext {
-    sonarVersion = '8.5.0.37579'
+    sonarVersion = '8.7.0.41497'
     sonarDistributive = "${projectDir}/sonar-distributive"
     sonarLibs = "${sonarDistributive}/sonarqube-${sonarVersion}/lib"
 }

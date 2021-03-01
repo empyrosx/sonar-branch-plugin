@@ -8,7 +8,6 @@ import org.sonar.db.ce.CeTaskCharacteristicDto;
 import org.sonar.db.component.BranchDto;
 import org.sonar.db.component.BranchType;
 import org.sonar.db.component.ComponentDto;
-import org.sonar.db.organization.OrganizationDto;
 import org.sonar.server.ce.queue.BranchSupport;
 import org.sonar.server.ce.queue.BranchSupportDelegate;
 
@@ -69,7 +68,7 @@ public class BranchSupportDelegateImpl implements BranchSupportDelegate {
 
     @Override
     public ComponentDto createBranchComponent(DbSession dbSession, BranchSupport.ComponentKey componentKey,
-                                              OrganizationDto organization, ComponentDto mainComponentDto,
+                                              ComponentDto mainComponentDto,
                                               BranchDto mainComponentBranchDto) {
 
         // TODO: Add logging

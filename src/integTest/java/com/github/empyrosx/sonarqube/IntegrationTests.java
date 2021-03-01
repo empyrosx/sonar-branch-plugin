@@ -3,6 +3,7 @@ package com.github.empyrosx.sonarqube;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.commons.codec.binary.Base64;
 import org.hamcrest.CoreMatchers;
 import org.junit.Rule;
 import org.junit.Test;
@@ -18,11 +19,12 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.shaded.com.google.common.net.HttpHeaders;
 import org.testcontainers.utility.MountableFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -78,7 +80,7 @@ public class IntegrationTests {
     @Parameters(name = "{0}")
     public static Object[] data() {
         return new Object[]{
-                "sonarqube:8.5-community"
+                "sonarqube:8.7-community"
         };
     }
 
@@ -98,8 +100,12 @@ public class IntegrationTests {
 
         OkHttpClient client = new OkHttpClient();
 
+        byte[] encodedAuth = Base64.encodeBase64(
+                "admin:admin".getBytes(StandardCharsets.ISO_8859_1));
+        String authHeader = "Basic " + new String(encodedAuth);
         Request request = new Request.Builder()
                 .url("http://" + redisUrl + "/api/project_branches/list?project=branch-scanner")
+                .addHeader(HttpHeaders.AUTHORIZATION, authHeader)
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
