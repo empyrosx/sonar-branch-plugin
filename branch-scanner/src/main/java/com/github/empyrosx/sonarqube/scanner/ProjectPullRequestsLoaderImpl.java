@@ -37,7 +37,7 @@ public class ProjectPullRequestsLoaderImpl implements ProjectPullRequestsLoader 
     private List<PullRequestInfo> loadPullRequests(String projectKey) {
         GetRequest request = new GetRequest(getUrl(projectKey));
 
-        try (WsResponse response = this.wsClient.call(request)) {
+        try (WsResponse response = Utils.call(this.wsClient, request)) {
             return parseResponse(response);
         } catch (IOException e) {
             throw MessageException.of("Could not load pull requests from server", e);

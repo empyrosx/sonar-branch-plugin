@@ -37,11 +37,12 @@ public class BranchLoaderDelegateImpl implements BranchLoaderDelegate {
         String branchName = StringUtils.trimToNull(metadata.getBranchName());
         if (branchName == null) {
             Optional<BranchDto> mainBranchDto = this.findBranchByUuid(this.metadataHolder.getProject().getUuid());
+            BranchDto branchDto = mainBranchDto.get();
             result = mainBranchDto
-                    .map((value) -> new BranchImpl(BranchType.LONG, true, mainBranchDto.get().getKey()))
-                    .orElseGet(() -> new BranchImpl(BranchType.LONG, true, "master"));
+                    .map((value) -> new BranchImpl(branchDto.getBranchType(), branchDto.isMain(), branchDto.getKey()))
+                    .orElseGet(() -> new BranchImpl(branchDto.getBranchType(), branchDto.isMain(), "master"));
         } else {
-            String targetBranch = StringUtils.trimToNull(metadata.getMergeBranchName());
+            String targetBranch = StringUtils.trimToNull(metadata.getReferenceBranchName());
             String targetBranchName = StringUtils.trimToNull(metadata.getTargetBranchName());
             BranchType branchType = detectBranchType(metadata.getBranchType());
             Project project = this.metadataHolder.getProject();
@@ -56,10 +57,8 @@ public class BranchLoaderDelegateImpl implements BranchLoaderDelegate {
 
     private static BranchType detectBranchType(ScannerReport.Metadata.BranchType branchType) {
         switch (branchType) {
-            case LONG:
-                return BranchType.LONG;
-            case SHORT:
-                return BranchType.SHORT;
+            case BRANCH:
+                return BranchType.valueOf("BRANCH");
             case PULL_REQUEST:
                 return BranchType.PULL_REQUEST;
             case UNSET:
@@ -90,7 +89,7 @@ public class BranchLoaderDelegateImpl implements BranchLoaderDelegate {
         } else {
             BranchDto dto = this.findBranchByKey(project.getUuid(), targetBranch)
                     .orElseThrow(() -> new IllegalStateException(format("Merge branch '%s' does not exist", targetBranch)));
-            if (dto.getBranchType() != BranchType.LONG) {
+            if (dto.getBranchType() == BranchType.PULL_REQUEST) {
                 throw MessageException.of(format("Invalid merge branch '%s': it must be a long branch but it is '%s'", targetBranch, dto.getBranchType()));
             }
             targetUuid = dto.getUuid();

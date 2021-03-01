@@ -22,6 +22,7 @@ import org.testcontainers.utility.MountableFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -77,12 +78,7 @@ public class IntegrationTests {
     @Parameters(name = "{0}")
     public static Object[] data() {
         return new Object[]{
-                "sonarqube:7.8-community",
-                "sonarqube:7.9-community",
-                "sonarqube:7.9.1-community",
-                "sonarqube:7.9.2-community"
-//                "sonarqube:8-community-beta",
-//                "sonarqube:8.1-community-beta"
+                "sonarqube:8.5-community"
         };
     }
 
@@ -111,8 +107,8 @@ public class IntegrationTests {
             List<Branch> branches = branchesResponse.branches;
 
             assertEquals(2, branches.size());
-            assertThat(branches, CoreMatchers.hasItem(new Branch("master", "LONG", true)));
-            assertThat(branches, CoreMatchers.hasItem(new Branch("branch-19.100", "LONG", false)));
+            assertThat(branches, CoreMatchers.hasItem(new Branch("master", "BRANCH", true)));
+            assertThat(branches, CoreMatchers.hasItem(new Branch("branch-19.100", "BRANCH", false)));
         }
     }
 

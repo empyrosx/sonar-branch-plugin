@@ -29,20 +29,6 @@ public class BranchCoreExtension implements CoreExtension {
         }
 
         context.addExtensions(
-                PropertyDefinition.builder(PurgeConstants.DAYS_BEFORE_DELETING_INACTIVE_SHORT_LIVING_BRANCHES)
-                        .name("Number of days before purging inactive short living branches")
-                        .description("Short living branches are permanently deleted when there are no analysis for the configured number of days.")
-                        .category(CoreProperties.CATEGORY_GENERAL)
-                        .subCategory(CoreProperties.SUBCATEGORY_DATABASE_CLEANER)
-                        .defaultValue("30")
-                        .type(PropertyType.INTEGER)
-                        .build(),
-                PropertyDefinition.builder(CoreProperties.LONG_LIVED_BRANCHES_REGEX)
-                        .onQualifiers(Qualifiers.PROJECT)
-                        .category(CoreProperties.CATEGORY_GENERAL)
-                        .subCategory(CoreProperties.SUBCATEGORY_BRANCHES)
-                        .defaultValue("(branch|release)-.*")
-                        .build(),
                 PropertyDefinition.builder("sonar.pullrequest.provider")
                         .onlyOnQualifiers(Qualifiers.PROJECT)
                         .subCategory(PULL_REQUEST_CATEGORY_LABEL)

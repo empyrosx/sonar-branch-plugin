@@ -12,17 +12,21 @@ public class BranchConfigurationImpl implements BranchConfiguration {
     private final BranchType branchType;
     private final String branchName;
     @Nullable
-    private final String targetBranchName;
+    private final String referenceBranchName;
     @Nullable
-    private final String longLivingSonarReferenceBranch;
+    private final String targetBranchName;
     @Nullable
     private final String pullRequestKey;
 
-    BranchConfigurationImpl(BranchType branchType, String branchName, @Nullable String targetBranchName, @Nullable String longLivingSonarReferenceBranch, @Nullable String pullRequestKey) {
+    BranchConfigurationImpl(BranchType branchType,
+                            String branchName,
+                            @Nullable String referenceBranchName,
+                            @Nullable String targetBranchName,
+                            @Nullable String pullRequestKey) {
         this.branchType = branchType;
         this.branchName = branchName;
+        this.referenceBranchName = referenceBranchName;
         this.targetBranchName = targetBranchName;
-        this.longLivingSonarReferenceBranch = longLivingSonarReferenceBranch;
         this.pullRequestKey = pullRequestKey;
     }
 
@@ -40,8 +44,8 @@ public class BranchConfigurationImpl implements BranchConfiguration {
     }
 
     @CheckForNull
-    public String longLivingSonarReferenceBranch() {
-        return this.longLivingSonarReferenceBranch;
+    public String referenceBranchName() {
+        return this.referenceBranchName;
     }
 
     public String pullRequestKey() {

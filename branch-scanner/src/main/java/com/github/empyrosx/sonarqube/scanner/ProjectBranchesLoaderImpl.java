@@ -11,11 +11,14 @@ import org.sonar.scanner.scan.branch.ProjectBranches;
 import org.sonar.scanner.scan.branch.ProjectBranchesLoader;
 import org.sonarqube.ws.client.GetRequest;
 import org.sonarqube.ws.client.HttpException;
+import org.sonarqube.ws.client.WsRequest;
 import org.sonarqube.ws.client.WsResponse;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Reader;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,7 +40,7 @@ public class ProjectBranchesLoaderImpl implements ProjectBranchesLoader {
     private List<BranchInfo> loadBranchInfos(String projectKey) {
         GetRequest request = new GetRequest(getUrl(projectKey));
 
-        try (WsResponse response = this.wsClient.call(request)) {
+        try (WsResponse response = Utils.call(wsClient, request)) {
             return parseResponse(response);
         } catch (IOException e) {
             throw MessageException.of("Could not load branches from server", e);

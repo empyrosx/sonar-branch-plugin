@@ -227,4 +227,10 @@ public class GitlabPullRequestDecorator implements PostProjectAnalysisTask {
         return configuration.get(propertyName)
                 .orElseThrow(() -> new IllegalStateException(String.format("%s must be defined in the project configuration", propertyName)));
     }
+
+//    @Override
+    public String getDescription() {
+        return "Pull Request Decoration";
+    }
+
 }

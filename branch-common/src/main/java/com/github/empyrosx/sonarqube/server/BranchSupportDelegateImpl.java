@@ -54,10 +54,9 @@ public class BranchSupportDelegateImpl implements BranchSupportDelegate {
     public BranchSupport.ComponentKey createComponentKey(String projectKey, Map<String, String> options) {
         BranchType branchType = getBranchType(options);
         switch (branchType) {
-            case LONG:
-            case SHORT: {
+            case BRANCH: {
                 String branch = StringUtils.trim(options.get(CeTaskCharacteristicDto.BRANCH_KEY));
-                return ComponentKeyImpl.forBranch(projectKey, branch, branchType);
+                return ComponentKeyImpl.forBranch(projectKey, branch);
             }
             case PULL_REQUEST: {
                 String pullRequest = StringUtils.trimToNull(options.get(CeTaskCharacteristicDto.PULL_REQUEST));
@@ -79,11 +78,8 @@ public class BranchSupportDelegateImpl implements BranchSupportDelegate {
             throw new IllegalStateException("Component Key and Main Component Key are not equal");
         }
 
-        if (componentKey.getBranch()
-                .filter(branch -> (branch.getName().equals(mainComponentBranchDto.getKey())
-                        && branch.getType() == mainComponentBranchDto.getBranchType()))
-                .isPresent()
-        ) {
+        Optional<String> branchOptional = componentKey.getBranchName();
+        if (branchOptional.isPresent() && branchOptional.get().equals(mainComponentBranchDto.getKey())) {
             return mainComponentDto;
         }
 
@@ -106,20 +102,19 @@ public class BranchSupportDelegateImpl implements BranchSupportDelegate {
 
         private final String key;
         private final String dbKey;
-        private final BranchSupport.Branch branch;
+        private final String branch;
         private final String pullRequestKey;
 
-        private ComponentKeyImpl(String key, String dbKey, BranchSupport.Branch branch, String pullRequestKey) {
+        private ComponentKeyImpl(String key, String dbKey, String branch, String pullRequestKey) {
             this.key = key;
             this.dbKey = dbKey;
             this.branch = branch;
             this.pullRequestKey = pullRequestKey;
         }
 
-        public static BranchSupport.ComponentKey forBranch(String projectKey, String branch, BranchType branchType) {
+        public static BranchSupport.ComponentKey forBranch(String projectKey, String branch) {
             String branchKey = ComponentDto.generateBranchKey(projectKey, branch);
-            BranchSupport.Branch branchDto = new BranchSupport.Branch(branch, branchType);
-            return new ComponentKeyImpl(projectKey, branchKey, branchDto, null);
+            return new ComponentKeyImpl(projectKey, branchKey, branch, null);
         }
 
         public static BranchSupport.ComponentKey forPullRequest(String projectKey, String pullRequest) {
@@ -137,13 +132,13 @@ public class BranchSupportDelegateImpl implements BranchSupportDelegate {
             return dbKey;
         }
 
-        @Override
+        //        @Override
         public Optional<String> getDeprecatedBranchName() {
             return Optional.empty();
         }
 
         @Override
-        public Optional<BranchSupport.Branch> getBranch() {
+        public Optional<String> getBranchName() {
             return Optional.ofNullable(branch);
         }
 

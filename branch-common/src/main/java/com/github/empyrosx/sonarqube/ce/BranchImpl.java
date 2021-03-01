@@ -20,8 +20,8 @@ public class BranchImpl implements Branch {
     private final String mergeBranchUuid;
     private final String name;
 
-    BranchImpl(BranchType branchType, boolean isMain, String var3) {
-        this(branchType, isMain, var3, null, null, null);
+    BranchImpl(BranchType branchType, boolean isMain, String branchName) {
+        this(branchType, isMain, branchName, null, null, null);
     }
 
     BranchImpl(BranchType branchType, boolean isMain, String branchName, @Nullable String mergeBranchUuid, @Nullable String var5) {
@@ -49,6 +49,11 @@ public class BranchImpl implements Branch {
         }
     }
 
+//    @Override
+    public String getReferenceBranchUuid() {
+        return mergeBranchUuid;
+    }
+
     public boolean isMain() {
         return this.isMain;
     }
@@ -74,11 +79,7 @@ public class BranchImpl implements Branch {
     }
 
     public String getTargetBranchName() {
-        if (this.branchType == BranchType.LONG) {
-            throw new IllegalStateException("Only on a short lived branch or pull request");
-        } else {
-            return this.targetBranchName;
-        }
+        return this.targetBranchName;
     }
 
     public String generateKey(String projectKey, @Nullable String fileOrDirPath) {
